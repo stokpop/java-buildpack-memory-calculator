@@ -2,6 +2,8 @@
 
 The newest release comes first. Before tagging a release, add a `## vX.Y.Z` section at the top. The Release workflow copies that section into the GitHub release text. Write each paragraph and list item on one line, because GitHub keeps single line breaks. See [docs/RELEASE.md](docs/RELEASE.md).
 
+## v9.9.10
+
 ## v9.9.9
 
 - Workflow test release.
