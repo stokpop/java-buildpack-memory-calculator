@@ -42,6 +42,10 @@ jobs:
         with:
           ref: refs/tags/${{ env.TAG }}
 
+      # Fail before building when the release has no notes, so a release cannot go out without them.
+      - name: Extract release notes
+        run: ./.github/scripts/release-notes.sh "${VERSION}" > "${RUNNER_TEMP}/release-notes.md"
+
       - name: Set up Go
         uses: actions/setup-go@v7.1.0
         with:
@@ -62,6 +66,59 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${TAG}" --clobber \
-            "dist/memory-calculator-${VERSION}.tgz" \
+            "dist/memory-calculator-${VERSION}-linux-amd64.tgz" \
             "dist/memory-calculator-${VERSION}-linux-arm64.tgz" \
             dist/SHA256SUMS
+
+      # Copies the RELEASE_NOTES.md section of this tag into the release text, replacing what was typed when
+      # publishing. A re-run keeps the text in sync with the file.
+      - name: Update release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${TAG}" --notes-file "${RUNNER_TEMP}/release-notes.md"
+
+  # After a release, proposes the next version heading in RELEASE_NOTES.md as a pull request. This needs the
+  # repository setting "Allow GitHub Actions to create and approve pull requests". Without it the step only
+  # logs a warning and the release is unaffected: add the heading by hand, see docs/RELEASE.md.
+  next-notes:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Propose notes for the next version
+        continue-on-error: true
+        run: |
+          VERSION="${TAG#v}"
+          NEXT=$(./.github/scripts/next-notes.sh "${VERSION}")
+          if [[ -z "${NEXT}" ]]; then
+            echo "Nothing to add: the newest heading in RELEASE_NOTES.md is not v${VERSION}."
+            exit 0
+          fi
+
+          BRANCH="next-release-notes-${NEXT}"
+          if [[ -n "$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[].number')" ]]; then
+            echo "A pull request for ${BRANCH} is already open."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
+          git commit -am "docs: start release notes for v${NEXT}"
+          if ! git push --force origin "${BRANCH}" || ! gh pr create \
+              --base "${{ github.event.repository.default_branch }}" --head "${BRANCH}" \
+              --title "docs: start release notes for v${NEXT}" \
+              --body "Adds an empty \`## v${NEXT}\` section to RELEASE_NOTES.md after v${VERSION}. Write the notes before releasing, or change the heading if the next release is a larger jump. The Release workflow fails on an empty section."; then
+            echo "::warning::Could not open the pull request. Add a '## v${NEXT}' section to RELEASE_NOTES.md by hand, see docs/RELEASE.md."
+            exit 1
+          fi

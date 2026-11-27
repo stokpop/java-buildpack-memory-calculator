@@ -57,7 +57,7 @@ Therefore the memory calculator does not set the compressed class space size (`-
 [h]: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/considerations.html
 
 ## Releasing
-See [docs/RELEASE.md](docs/RELEASE.md) for how to cut a release and what it contains.
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for what changed in each release and [docs/RELEASE.md](docs/RELEASE.md) for how to cut a release.
 
 ## License
 The Java Buildpack Memory Calculator is Open Source software released under the [Apache 2.0 license][a].
