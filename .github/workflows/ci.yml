@@ -50,7 +50,7 @@ jobs:
 
   snapshot:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/tmp-next-test'
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -2,6 +2,10 @@
 
 The newest release comes first. Before tagging a release, add a `## vX.Y.Z` section at the top. The Release workflow copies that section into the GitHub release text. Write each paragraph and list item on one line, because GitHub keeps single line breaks. See [docs/RELEASE.md](docs/RELEASE.md).
 
+## v9.9.9
+
+- Workflow test release.
+
 ## v4.3.0
 
 - New experimental `--xms-equals-xmx` flag sets the initial heap (`-Xms`) equal to the calculated or explicitly configured maximum heap (`-Xmx`). It is off by default, an explicit `-Xms` takes precedence, and an `-Xms` larger than `-Xmx` is an error that names the excess.
